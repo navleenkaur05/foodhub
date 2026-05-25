@@ -3,30 +3,42 @@ let currentCategory = 'all';
 
 document.addEventListener('DOMContentLoaded', function() {
     const menuGrid = document.getElementById('menuGrid');
-    const filterButtons = document.querySelectorAll('.filter-btn');
+    const categoryFilter = document.querySelector('.category-filter');
+    const categories = ['all', ...new Set(menuItems.map(item => item.category))];
     
+    renderCategoryButtons(categories, categoryFilter, menuGrid);
+
     // Initial render
     renderMenuItems(menuItems, menuGrid);
-    
-    // Category filter event listeners
+});
+
+function renderCategoryButtons(categories, categoryFilter, menuGrid) {
+    if (!categoryFilter) return;
+    categoryFilter.innerHTML = categories
+        .map((category, index) => `
+            <button class="filter-btn ${index === 0 ? 'active' : ''}" data-category="${category}">
+                ${category === 'all' ? 'All' : category}
+            </button>
+        `)
+        .join('');
+
+    const filterButtons = categoryFilter.querySelectorAll('.filter-btn');
     filterButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Update active button
             filterButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
-            
-            // Filter items
+
             const category = this.getAttribute('data-category');
             currentCategory = category;
-            
-            const filteredItems = category === 'all' 
-                ? menuItems 
+
+            const filteredItems = category === 'all'
+                ? menuItems
                 : menuItems.filter(item => item.category === category);
-            
+
             renderMenuItems(filteredItems, menuGrid);
         });
     });
-});
+}
 
 // Render menu items
 function renderMenuItems(items, container) {
@@ -41,7 +53,7 @@ function renderMenuItems(items, container) {
             <div class="menu-item-content">
                 <div class="menu-item-header">
                     <h3 class="menu-item-name">${item.name}</h3>
-                    <span class="menu-item-price">$${item.price.toFixed(2)}</span>
+                    <span class="menu-item-price">₹${item.price.toFixed(2)}</span>
                 </div>
                 <p class="menu-item-description">${item.description}</p>
                 <div class="menu-item-footer">

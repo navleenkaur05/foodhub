@@ -1,7 +1,7 @@
 const express = require("express");
+require("dotenv").config();
 const http = require("http");
 const path = require("path");
-const mongoose = require("mongoose");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
@@ -17,23 +17,22 @@ const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
 const viewRoutes = require("./routes/viewRoutes");
 const productRoutes = require("./routes/productRoutes");
+const userRoutes = require("./routes/userRoutes");
+const cartRoutes = require("./routes/cartRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
 const middlewareDemoRoutes = require("./routes/middlewareDemoRoutes");
 const { requestLifecycleLogger } = require("./middlewares/requestLifecycle");
 const { notFoundHandler, globalErrorHandler } = require("./middlewares/errorHandler");
+const { connectDB } = require("./db");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/food_order";
+const PORT = process.env.PORT || 5000;
 
-// ---------------------- DATABASE (Mongoose) ----------------------
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection failed:", err.message));
+// ---------------------- DATABASE (PostgreSQL) ----------------------
+connectDB().catch((err) => console.error("PostgreSQL connection failed:", err.message));
 
 // ---------------------- PASSPORT LOCAL STRATEGY ----------------------
 passport.use(
@@ -67,7 +66,15 @@ app.set("views", path.join(__dirname, "views"));
 
 // ---------------------- APP-LEVEL MIDDLEWARE ----------------------
 // Third-party middleware examples
-app.use(helmet());
+// Third-party middleware examples
+app.use(
+  helmet({
+    contentSecurityPolicy: false
+  })
+);
+
+app.use(cors());
+app.use(morgan("dev"));
 app.use(cors());
 app.use(morgan("dev"));
 
@@ -101,11 +108,19 @@ app.use(orderRoutes);
 app.use("/auth", authRoutes);
 app.use(viewRoutes);
 app.use("/api", productRoutes);
+app.use("/api", userRoutes);
+app.use("/api", cartRoutes);
 app.use("/session", sessionRoutes);
 app.use(middlewareDemoRoutes);
 
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", message: "Server is healthy" });
+app.get("/health", async (req, res, next) => {
+  try {
+    const { pool } = require("./db");
+    await pool.query("SELECT 1");
+    res.status(200).json({ status: "ok", message: "Server is healthy", database: "postgresql" });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // ---------------------- SOCKET.IO (FULL DUPLEX) ----------------------

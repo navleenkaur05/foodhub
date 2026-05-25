@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMessage = document.getElementById('errorMessage');
     
     if (registerForm) {
-        registerForm.addEventListener('submit', function(e) {
+        registerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const name = document.getElementById('name').value;
@@ -26,30 +26,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Check if user already exists
-            if (userExists(email)) {
-                errorMessage.textContent = 'An account with this email already exists';
+            try {
+                await apiRegister({ name, email, password });
+                const loginData = await apiLogin({ email, password });
+                setCurrentUser({
+                    id: loginData.user?.id || '',
+                    name: loginData.user?.name || name,
+                    email: loginData.user?.email || email,
+                    token: loginData.token || '',
+                });
+                window.location.href = 'index.html';
+            } catch (error) {
+                errorMessage.textContent = error.message || 'Registration failed';
                 errorMessage.style.display = 'block';
-                return;
             }
-            
-            // Create new user
-            const newUser = {
-                name,
-                email,
-                password // In a real app, this would be hashed
-            };
-            
-            addUser(newUser);
-            
-            // Set current user (excluding password)
-            setCurrentUser({
-                name,
-                email
-            });
-            
-            // Redirect to home page
-            window.location.href = 'index.html';
         });
     }
 });

@@ -1,6 +1,7 @@
 // Authentication management
 const AUTH_KEY = 'foodhub_auth';
 const USERS_KEY = 'foodhub_users';
+const API_BASE = '/auth';
 
 // Get current user
 function getCurrentUser() {
@@ -11,6 +12,11 @@ function getCurrentUser() {
 // Set current user
 function setCurrentUser(user) {
     localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+}
+
+function getAuthToken() {
+    const user = getCurrentUser();
+    return user?.token || '';
 }
 
 // Remove current user
@@ -41,6 +47,28 @@ function userExists(email) {
 function validateLogin(email, password) {
     const users = getUsers();
     return users.find(user => user.email === email && user.password === password);
+}
+
+async function apiRegister({ name, email, password }) {
+    const response = await fetch(`${API_BASE}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Registration failed');
+    return data;
+}
+
+async function apiLogin({ email, password }) {
+    const response = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Login failed');
+    return data;
 }
 
 // Update UI based on auth state

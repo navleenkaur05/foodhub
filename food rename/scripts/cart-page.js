@@ -37,7 +37,7 @@ function renderCart() {
                 <img src="${item.image}" alt="${item.name}" class="cart-item-image">
                 <div class="cart-item-details">
                     <h3 class="cart-item-name">${item.name}</h3>
-                    <p class="cart-item-price">$${item.price.toFixed(2)}</p>
+                    <p class="cart-item-price">₹${item.price.toFixed(2)}</p>
                     <div class="cart-item-actions">
                         <div class="quantity-controls">
                             <button class="quantity-btn" data-id="${item.id}" data-action="decrease">-</button>
@@ -65,10 +65,10 @@ function updateCartSummary() {
     const delivery = 5.00;
     const total = subtotal + tax + delivery;
     
-    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
-    document.getElementById('delivery').textContent = `$${delivery.toFixed(2)}`;
-    document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('tax').textContent = `₹${tax.toFixed(2)}`;
+    document.getElementById('delivery').textContent = `₹${delivery.toFixed(2)}`;
+    document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
 }
 
 // Add event listeners to cart buttons

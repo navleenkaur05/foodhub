@@ -43,7 +43,7 @@ function renderCheckoutSummary() {
                 <div class="checkout-item-name">${item.name}</div>
                 <div class="checkout-item-quantity">Qty: ${item.quantity}</div>
             </div>
-            <div>$${(item.price * item.quantity).toFixed(2)}</div>
+            <div>₹${(item.price * item.quantity).toFixed(2)}</div>
         </div>
     `).join('');
     
@@ -53,14 +53,14 @@ function renderCheckoutSummary() {
     const delivery = 5.00;
     const total = subtotal + tax + delivery;
     
-    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
-    document.getElementById('delivery').textContent = `$${delivery.toFixed(2)}`;
-    document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('tax').textContent = `₹${tax.toFixed(2)}`;
+    document.getElementById('delivery').textContent = `₹${delivery.toFixed(2)}`;
+    document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
 }
 
 // Handle checkout
-function handleCheckout() {
+async function handleCheckout() {
     // Get form data
     const formData = {
         fullName: document.getElementById('fullName').value,
@@ -84,23 +84,57 @@ function handleCheckout() {
         return;
     }
     
-    // Generate order number
-    const orderNumber = 'FH' + Date.now().toString().slice(-8);
-    
-    // Store order (for confirmation page)
-    sessionStorage.setItem('lastOrder', JSON.stringify({
-        orderNumber,
-        items: getCart(),
-        total: calculateTotal(),
-        customerInfo: formData,
-        timestamp: new Date().toISOString()
-    }));
-    
-    // Clear cart
-    clearCart();
-    
-    // Redirect to confirmation page
-    window.location.href = 'confirmation.html';
+    try {
+        const currentUser = getCurrentUser();
+        const payload = {
+            userEmail: currentUser?.email || formData.email,
+            customerInfo: {
+                fullName: formData.fullName,
+                email: formData.email,
+                phone: formData.phone,
+                address: formData.address,
+                notes: formData.notes,
+            },
+            payment: {
+                cardNumber: formData.cardNumber,
+                expiry: formData.expiry,
+            },
+            items: getCart().map(item => ({
+                itemId: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                image: item.image,
+                category: item.category,
+            })),
+            notes: formData.notes,
+        };
+
+        const response = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: getAuthToken() ? `Bearer ${getAuthToken()}` : '',
+            },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Checkout failed');
+        }
+
+        sessionStorage.setItem('lastOrder', JSON.stringify({
+            orderNumber: data.orderNumber,
+            items: payload.items,
+            total: data.total || calculateTotal(),
+            customerInfo: formData,
+            timestamp: new Date().toISOString(),
+        }));
+        clearCart();
+        window.location.href = 'confirmation.html';
+    } catch (error) {
+        alert(error.message || 'Checkout failed');
+    }
 }
 
 // Calculate total

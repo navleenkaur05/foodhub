@@ -11,7 +11,7 @@ async function createProduct(req, res, next) {
 
 async function getProducts(req, res, next) {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find();
     res.json(products);
   } catch (error) {
     next(error);

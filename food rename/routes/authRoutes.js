@@ -15,7 +15,7 @@ router.get("/profile", verifyJwt, getProtectedProfile);
 router.post("/passport-login", passport.authenticate("local"), (req, res) => {
   res.json({
     message: "Passport local login successful",
-    user: { id: req.user._id, username: req.user.username },
+    user: { id: req.user.id, username: req.user.username },
   });
 });
 

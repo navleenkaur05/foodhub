@@ -27,7 +27,9 @@
       li.textContent = payload.message + " (" + payload.time + ")";
       list.appendChild(li);
     });
-
+  io.on('connect',()=>{
+    
+  })
     sendBtn.addEventListener("click", () => {
       if (!input.value.trim()) return;
       socket.emit("chat:message", { message: input.value.trim() });

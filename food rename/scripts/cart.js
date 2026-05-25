@@ -1,5 +1,6 @@
 // Shopping cart management
 const CART_KEY = 'foodhub_cart';
+const CART_API_BASE = '/api/cart';
 
 // Get cart items
 function getCart() {
@@ -11,6 +12,7 @@ function getCart() {
 function saveCart(cart) {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     updateCartBadge();
+    syncCartToServer(cart);
 }
 
 // Add item to cart
@@ -66,6 +68,7 @@ function getCartItemCount() {
 function clearCart() {
     localStorage.removeItem(CART_KEY);
     updateCartBadge();
+    clearCartOnServer();
 }
 
 // Update cart badge
@@ -120,9 +123,83 @@ function showNotification(message) {
     }, 3000);
 }
 
+async function syncCartToServer(cart) {
+    const currentUser = getCurrentUser();
+    if (!currentUser?.email) return;
+
+    try {
+        await fetch(CART_API_BASE, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: getAuthToken() ? `Bearer ${getAuthToken()}` : '',
+            },
+            body: JSON.stringify({
+                userEmail: currentUser.email,
+                items: cart.map(item => ({
+                    itemId: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    image: item.image,
+                    category: item.category,
+                })),
+            }),
+        });
+    } catch (error) {
+        console.error('Cart sync failed', error);
+    }
+}
+
+async function loadCartFromServer() {
+    const currentUser = getCurrentUser();
+    if (!currentUser?.email) return;
+
+    try {
+        const response = await fetch(`${CART_API_BASE}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+            headers: { Authorization: getAuthToken() ? `Bearer ${getAuthToken()}` : '' },
+        });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!Array.isArray(data.items)) return;
+
+        const normalized = data.items.map(item => ({
+            id: item.itemId,
+            name: item.name,
+            price: Number(item.price || 0),
+            quantity: Number(item.quantity || 1),
+            image: item.image || '',
+            category: item.category || 'General',
+        }));
+
+        localStorage.setItem(CART_KEY, JSON.stringify(normalized));
+        updateCartBadge();
+    } catch (error) {
+        console.error('Cart load failed', error);
+    }
+}
+
+async function clearCartOnServer() {
+    const currentUser = getCurrentUser();
+    if (!currentUser?.email) return;
+    try {
+        await fetch(`${CART_API_BASE}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+            method: 'DELETE',
+            headers: { Authorization: getAuthToken() ? `Bearer ${getAuthToken()}` : '' },
+        });
+    } catch (error) {
+        console.error('Cart clear on server failed', error);
+    }
+}
+
 // Initialize cart badge on page load
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateCartBadge);
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCartBadge();
+        loadCartFromServer();
+    });
 } else {
     updateCartBadge();
+    loadCartFromServer();
 }

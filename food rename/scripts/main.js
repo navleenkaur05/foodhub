@@ -17,7 +17,7 @@ function renderMenuItems(items, container) {
             <div class="menu-item-content">
                 <div class="menu-item-header">
                     <h3 class="menu-item-name">${item.name}</h3>
-                    <span class="menu-item-price">$${item.price.toFixed(2)}</span>
+                    <span class="menu-item-price">₹${item.price.toFixed(2)}</span>
                 </div>
                 <p class="menu-item-description">${item.description}</p>
                 <div class="menu-item-footer">
